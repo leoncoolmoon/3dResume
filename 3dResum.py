@@ -61,12 +61,13 @@ def generate_gcode(filename, layer_num, output_filename):
         file.write('M117 Homing Z ...\n')
         file.write('G28 Z ; Home the Z axis\n')
 
-        # Add the header lines from the original file, skipping lines with M140, M190, M104, M109, G28 X0 Y0 and G28 Z0
-        skip_strings = ['M140', 'M190', 'M104', 'M109', 'G28 X0 Y0', 'G28 Z0']
-        for line in linecache.getlines(filename)[:header_end_line+1]:
-            if any(s in line for s in skip_strings):
-                continue
-            file.write(line)
+        if clean_extruder.get():
+            # Add the header lines from the original file, skipping lines with M140, M190, M104, M109, G28 X0 Y0 and G28 Z0
+            skip_strings = ['M140', 'M190', 'M104', 'M109', 'G28 X0 Y0', 'G28 Z0']
+            for line in linecache.getlines(filename)[:header_end_line+1]:
+                if any(s in line for s in skip_strings):
+                    continue
+                file.write(line)
 
         file.write('M117 Resuming Z ...\n')
         # Move the extruder to the last Z positions before the specified layer
@@ -77,7 +78,7 @@ def generate_gcode(filename, layer_num, output_filename):
         file.write('M117 Resuming Extruder ...\n')
         # Set the last E value
         file.write('G92 E{} ; Set the current extruder value\n'.format(last_e_value))
-        file.write('M117 Resuming from {}...\n'.format(layer_num))
+        file.write('M117 Resuming from layer {}...\n'.format(layer_num))
         # Write the rest of the gcode starting from the specified layer
         for i in tqdm(range(start_line, total_lines), desc='Writing the file'):  # add a progress bar
             line = linecache.getline(filename, i+1)
@@ -113,12 +114,16 @@ root.dnd_bind('<<Drop>>', drop)
 browse_button = tk.Button(root, text="Browse", command=browse_file)
 browse_button.grid(row=0, column=2)
 
-tk.Label(root, text="Cut layer number:").grid(row=1)
+clean_extruder = tk.BooleanVar()
+clean_extruder.set(True)
+checkbox = tk.Checkbutton(root, text="Clean Extruder", variable=clean_extruder)
+checkbox.grid(row=1, column=0)
+
+tk.Label(root, text="Cut layer number:").grid(row=2)
 layer_num_entry = tk.Entry(root)
-layer_num_entry.grid(row=1, column=1)
+layer_num_entry.grid(row=2, column=1)
 
 generate_button = tk.Button(root, text="Generate", command=generate)
-generate_button.grid(row=1, column=2)
+generate_button.grid(row=2, column=2)
 
 root.mainloop()
-
